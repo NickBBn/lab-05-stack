@@ -9,7 +9,11 @@ template <typename T>
 class stack_light
 {
  public:
-  explicit stack_light(const T& first_element);
+  stack_light();
+  stack_light(const stack_light& s) = delete;
+  stack_light(stack_light&& s) noexcept;
+  void operator=(const stack_light& s) = delete;
+  void operator=(stack_light&& s) noexcept;
   const T& head() const;
   void push(const T& value);
   void push(T&& value);
@@ -25,17 +29,21 @@ class stack_light
         : body(elem)
     {}
     explicit node(T&& elem)
-        : body(std::forward<T>(elem))
+        : body(std::move(elem))
     {}
   } *element;
 };
 
 template <typename T>
-stack_light<T>::stack_light(const T& first_element)
+stack_light<T>::stack_light()
+    : element(nullptr)
+{}
+
+template <typename T>
+stack_light<T>::stack_light(stack_light&& s) noexcept
+    : element(std::move(s.element))
 {
-  element = new node(first_element);
-  //element->body = first_element;
-  element->previous = nullptr;
+  s.element = nullptr;
 }
 
 template <typename T>
@@ -55,7 +63,6 @@ void stack_light<T>::push(const T& value) {
 template <typename T>
 void stack_light<T>::push(T&& value) {
   node* tmp_pointer = new node(std::move(value));
-  //tmp_pointer->body = std::forward<T&&>(value);
   tmp_pointer->previous = element;
   element = tmp_pointer;
 }
@@ -82,6 +89,12 @@ stack_light<T>::~stack_light() {
     }
     delete element;
   }
+}
+
+template <typename T>
+void stack_light<T>::operator=(stack_light&& s) noexcept{
+  element = std::move(s.element);
+  s.element = nullptr;
 }
 
 #endif  // TEMPLATE_STACK_LIGHT_HPP
