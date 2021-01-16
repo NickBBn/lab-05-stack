@@ -21,9 +21,12 @@ class stack_light
   {
     T body;
     node* previous;
-    explicit node(T t){
-      body = t;
-    }
+    explicit node(const T& elem)
+        : body(elem)
+    {}
+    explicit node(T&& elem)
+        : body(std::forward<T>(elem))
+    {}
   } *element;
 };
 
@@ -31,7 +34,8 @@ template <typename T>
 stack_light<T>::stack_light(const T& first_element)
 {
   element = new node(first_element);
-  //element->previous = nullptr;
+  //element->body = first_element;
+  element->previous = nullptr;
 }
 
 template <typename T>
@@ -43,13 +47,15 @@ const T& stack_light<T>::head() const {
 template <typename T>
 void stack_light<T>::push(const T& value) {
   node* tmp_pointer = new node(value);
+  //tmp_pointer->body = value;
   tmp_pointer->previous = element;
   element = tmp_pointer;
 }
 
 template <typename T>
 void stack_light<T>::push(T&& value) {
-  node* tmp_pointer = new node(value);
+  node* tmp_pointer = new node(std::move(value));
+  //tmp_pointer->body = std::forward<T&&>(value);
   tmp_pointer->previous = element;
   element = tmp_pointer;
 }
