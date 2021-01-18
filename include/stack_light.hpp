@@ -69,13 +69,10 @@ void stack_light<T>::push(T&& value) {
 
 template <typename T>
 void stack_light<T>::pop() {
-  if (element->previous) {
+  if (element) {
     node* tmp_pointer = element->previous;
     delete element;
     element = tmp_pointer;
-  } else {
-    delete element;
-    element = nullptr;
   }
 }
 

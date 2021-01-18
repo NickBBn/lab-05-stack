@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 #include "stack_light.hpp"
+#include "stack.hpp"
 
 TEST(stack_light, push_lvalue) {
   int a = 23;
@@ -42,13 +43,13 @@ TEST(stack_light, push_rvalue) {
   stack1.push(ex1);
   EXPECT_EQ(stack1.head(), ex1);
   stack1.push(std::move(ex2));
-  //stack1.push(std::forward<example&&>(ex2));
   EXPECT_EQ(stack1.head(), ex3);
 }
 
 TEST(stack_light, pop) {
   char a = 'a';
   stack_light<char> stack1;
+  stack1.pop();
   stack1.push(a);
   EXPECT_EQ(stack1.head(), 'a');
   stack1.push('u');
@@ -90,3 +91,86 @@ TEST(stack_light, copy_prohibited) {
   EXPECT_EQ(std::is_copy_constructible<stack_light<char>>::value,false);
 }
 
+struct example2 {
+  int int_ex;
+  char char_ex;
+  bool operator==(const example2& ex) const { // needed for EXPECT_EQ
+    if ((ex.char_ex == char_ex)&&(ex.int_ex == int_ex)) return true;
+    else return false;
+  }
+  example2(const int& i, const char& c)
+      : int_ex(i)
+      , char_ex(c)
+  {}
+  example2(const example2& ex) = delete;
+  example2(example2&& ex) noexcept
+      : int_ex(ex.int_ex)
+      , char_ex(ex.char_ex)
+  { /*std::cout << "example2&& ex" << std::endl;*/ }
+};
+
+TEST(stack, push) {
+  stack<int> stack2;
+  stack2.push(18);
+  EXPECT_EQ(stack2.head(), 18);
+}
+
+TEST(stack, head_catch) {
+  stack<double> stack2;
+  EXPECT_THROW(stack2.head(), std::runtime_error);
+}
+
+TEST(stack, push_emplace) {
+  stack<example2> stack2;
+  int i1 = 1;
+  char c1 = 'a';
+  stack2.push_emplace(i1, c1);
+  EXPECT_EQ(stack2.head(), example2(i1, c1));
+
+  int i2 = 2;
+  char c2 = 'b';
+  stack2.push_emplace(std::move(i2), std::move(c2));
+  EXPECT_EQ(stack2.head(), example2(2, 'b'));
+
+  int i3 = 3;
+  char c3 = 'c';
+  stack2.push_emplace(std::move(i3), c3);
+  EXPECT_EQ(stack2.head(), example2(3, c3));
+}
+
+TEST(stack, pop) {
+  stack<example2> stack2;
+  example2 e1(0, '0');
+  example2 e2(5, '5');
+  example2 e3(0, '0');
+  stack2.push(std::move(e1));
+  stack2.push(std::move(e2));
+  stack2.pop();
+  EXPECT_EQ(stack2.head(), e3);
+  stack2.pop();
+  EXPECT_THROW(stack2.head(), std::runtime_error);
+}
+
+TEST(stack, move_constructible) {
+  int i = 10;
+  stack<int> stack1;
+  stack1.push(std::move(i));
+  stack<int> stack2(std::move(stack1));
+  EXPECT_EQ(stack2.head(), 10);
+  EXPECT_EQ(std::is_move_constructible<stack<int>>::value,true);
+}
+
+TEST(stack, move_assignable) {
+  char c = 'q';
+  stack<char> stack1;
+  stack1.push(std::move(c));
+  stack<char> stack2;
+  stack2 = std::move(stack1);
+  EXPECT_EQ(stack2.head(), 'q');
+  EXPECT_EQ(std::is_move_assignable<stack<char>>::value,true);
+}
+
+TEST(stack, copy_prohibited) {
+  EXPECT_EQ(std::is_copy_assignable<stack<char>>::value, false);
+  EXPECT_EQ(std::is_copy_constructible<stack<char>>::value,false);
+}
